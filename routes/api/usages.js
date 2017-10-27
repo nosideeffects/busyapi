@@ -16,14 +16,24 @@ class Usages {
     }
 }
 
-module.exports = function(app){
-    app.usages = new Usages();
+module.exports = function(pathMap){
+    let usages = new Usages();
 
-    app.post('/api/usages', function(req, res){
+    pathMap['/api/usages'] = function(request, response){
+        let body = [];
+        request.on('error', (err) => {
+            console.error(err);
+        }).on('data', (chunk) => {
+            body.push(chunk);
+        }).on('end', () => {
+            body = Buffer.concat(body).toString();
 
-        // Store the supplied usage data
-        let usageId = app.usages.insert(req.body);
+            // Store the supplied usage data
+            let usageId = usages.insert(body);
 
-        res.status(201).json({'id':usageId});
-    });
+            response.writeHead(201, {'Content-Type': 'application/json'});
+            response.write('{"id":' + usageId + '}');
+            response.end();
+        });
+    };
 };

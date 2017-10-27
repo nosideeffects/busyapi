@@ -1,30 +1,24 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-
-var app = express();
-
-
-app.use(bodyParser.json());
-
 // API
-require('./routes/api/usages')(app);
+let pathMap = {};
+require('./routes/api/usages')(pathMap);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+module.exports = (request, response) => {
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  const { method, url } = request;
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+  response.on('error', (err) => {
+    response.statusCode = 500;
+    response.end();
+  });
 
-module.exports = app;
+  if (method === 'POST') {
+      let endpoint = pathMap[url];
+      if (endpoint) {
+        endpoint(request, response);
+        return;
+      }
+  }
+
+  response.statusCode = 404;
+  response.end();
+};
